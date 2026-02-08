@@ -6,7 +6,7 @@ import pkgutil
 import streamlit as st
 from pathlib import Path
 
-from lib import get_session, init_db
+from lib.db import get_session, init_db
 from lib.models import Course, Student, PlanVersion, Enrollment
 
 st.set_page_config(page_title="Gestión de Rutas Académicas MBA/EMBA", layout="wide")
