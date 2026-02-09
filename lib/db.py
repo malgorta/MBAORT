@@ -5,8 +5,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 
-# Database file location (relative to repository root)
-DATA_DIR = Path(os.environ.get("DB_DATA_DIR", "data"))
+# Database file location using absolute paths
+# Get the repository root (parent of lib/ directory where this file is)
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Data directory - supports DB_DATA_DIR env var
+_db_data_dir = os.environ.get("DB_DATA_DIR", "data")
+_db_data_path = Path(_db_data_dir)
+
+# If env var is absolute path, use it; otherwise resolve relative to repo root
+if _db_data_path.is_absolute():
+    DATA_DIR = _db_data_path
+else:
+    DATA_DIR = _REPO_ROOT / _db_data_path
+
 DB_PATH = DATA_DIR / "app.db"
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
