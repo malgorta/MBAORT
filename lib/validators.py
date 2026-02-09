@@ -92,4 +92,8 @@ def validate_cronograma_df(df: pd.DataFrame):
         for failure in e.failure_cases.itertuples(index=False):
             errors.append(f"Fila {failure.index}: {failure.column} -> {failure.failure_case}")
 
+    # Clean up any remaining NaN values after validation
+    # Replace NaN with None in all columns to avoid conversion issues later
+    df = df.where(pd.notna(df), None)
+
     return df, errors
