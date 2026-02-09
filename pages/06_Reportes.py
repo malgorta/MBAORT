@@ -308,3 +308,5 @@ def run():
             if df_risk["Nivel Riesgo"].str.contains("HIGH").any():
                 high_risk_count = len(df_risk[df_risk["Nivel Riesgo"] == "HIGH"])
                 st.error(f"⚠️ {high_risk_count} estudiantes en RIESGO ALTO (requieren intervención)")
+
+run()

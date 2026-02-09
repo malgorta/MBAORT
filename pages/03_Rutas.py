@@ -357,3 +357,5 @@ def run():
 
         df_summary = pd.DataFrame(summary_data)
         st.dataframe(df_summary, use_container_width=True)
+
+run()

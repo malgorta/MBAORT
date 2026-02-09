@@ -280,3 +280,5 @@ def run():
         if students_summary:
             df_summary = pd.DataFrame(students_summary)
             st.dataframe(df_summary, use_container_width=True)
+
+run()

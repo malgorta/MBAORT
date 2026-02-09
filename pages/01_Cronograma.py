@@ -211,3 +211,5 @@ def run():
             )
         else:
             st.info("No hay fuentes registradas aún.")
+
+run()

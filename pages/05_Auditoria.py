@@ -143,3 +143,5 @@ def run():
                 st.write("#### Cambios por Usuario")
                 df_user = pd.DataFrame(sorted(user_counts.items(), key=lambda x: x[1], reverse=True), columns=["Usuario", "Cantidad"])
                 st.bar_chart(df_user.set_index("Usuario"))
+
+run()

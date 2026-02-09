@@ -353,3 +353,5 @@ def run():
 
     with col_count:
         st.metric("Electivas Completadas", f"{best_count}/5")
+
+run()
