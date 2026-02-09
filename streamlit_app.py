@@ -127,4 +127,4 @@ def main():
     page_names = sorted(pages_map.keys())
 
     # Default selection: Home if available
-    def
+
