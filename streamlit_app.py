@@ -43,12 +43,20 @@ def discover_pages(package):
 
 
 def load_and_run(module_name: str):
+    st.write(f"DEBUG running: {module_name}")
     try:
         module = importlib.import_module(module_name)
+
+        if not hasattr(module, "run"):
+            st.error(f"{module_name} no expone run()")
+            return
+
         module.run()
+
     except Exception as e:
         st.error(f"Error al ejecutar la página {module_name}")
         st.exception(e)
+
 
 
 def render_sidebar():
@@ -127,4 +135,3 @@ def main():
     page_names = sorted(pages_map.keys())
 
     # Default selection: Home if available
-
