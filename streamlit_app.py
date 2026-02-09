@@ -11,6 +11,10 @@ from lib.models import Course, Student, PlanVersion, Enrollment
 
 st.set_page_config(page_title="Gestión de Rutas Académicas MBA/EMBA", layout="wide")
 
+# Initialize database tables on app startup (if they don't exist)
+# This ensures the database is ready before any health checks or queries
+init_db()
+
 # Sidebar global
 st.sidebar.title("⚙️ Configuración Global")
 st.sidebar.text_input("Nombre de usuario", value="admin", key="global_user")
