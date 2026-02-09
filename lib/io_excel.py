@@ -58,10 +58,30 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
 
                 # Normalize fields
                 programa = _norm_str(row.get("Programa"))
-                anio = int(row.get("Año")) if pd.notna(row.get("Año")) else None
+
+                # Convert anio (Integer) - handle NaN safely
+                try:
+                    anio_val = row.get("Año")
+                    if pd.isna(anio_val) or anio_val == '':
+                        anio = None
+                    else:
+                        anio = int(float(anio_val))
+                except (ValueError, TypeError):
+                    anio = None
+
                 modulo = _norm_str(row.get("Módulo"))
                 materia = _norm_str(row.get("Materia"))
-                horas = row.get("Horas") if pd.notna(row.get("Horas")) else None
+
+                # Convert horas (Float) - handle NaN safely
+                try:
+                    horas_val = row.get("Horas")
+                    if pd.isna(horas_val) or horas_val == '':
+                        horas = None
+                    else:
+                        horas = float(horas_val)
+                except (ValueError, TypeError):
+                    horas = None
+
                 inicio = row.get("Inicio")
                 final = row.get("Final")
                 dia = _norm_str(row.get("Día"))
