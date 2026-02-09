@@ -91,6 +91,10 @@ def validate_cronograma_df(df: pd.DataFrame):
     _coerce_dates(df, "Inicio", errors)
     _coerce_dates(df, "Final", errors)
 
+    # AGGRESSIVE cleanup before schema validation
+    # Replace any NaN that may have been created during conversions above
+    df = df.where(pd.notna(df), None)
+
     # Basic schema with pandera
     schema = DataFrameSchema(
         {
@@ -124,7 +128,14 @@ def validate_cronograma_df(df: pd.DataFrame):
         for failure in e.failure_cases.itertuples(index=False):
             errors.append(f"Fila {failure.index}: {failure.column} -> {failure.failure_case}")
 
-    # Final cleanup: replace any remaining NaN with None
-    df = df.where(pd.notna(df), None)
+    # FINAL AGGRESSIVE CLEANUP - Replace all remaining NaN/NA with None
+    # This is done at the very end, before returning
+    for col in df.columns:
+        # For all columns, replace any NaN-like values with None
+        df[col] = df[col].where(pd.notna(df[col]), None)
+
+        # For object-type columns, explicitly handle edge cases
+        if df[col].dtype == object:
+            df[col] = df[col].apply(lambda x: None if (x is None or (pd.isna(x) if not isinstance(x, str) else False)) else x)
 
     return df, errors
