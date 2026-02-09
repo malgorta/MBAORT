@@ -43,19 +43,22 @@ def discover_pages(package):
 
 
 def load_and_run(module_name: str):
-    st.write(f"DEBUG running: {module_name}")
+    st.write(f"✅ Cargando: {module_name}")
     try:
         module = importlib.import_module(module_name)
+        st.write("✅ Import OK")
 
         if not hasattr(module, "run"):
-            st.error(f"{module_name} no expone run()")
+            st.error("❌ Esta página no tiene run()")
             return
 
         module.run()
+        st.write("✅ run() terminó")
 
     except Exception as e:
-        st.error(f"Error al ejecutar la página {module_name}")
+        st.error(f"❌ Error ejecutando {module_name}")
         st.exception(e)
+
 
 
 
