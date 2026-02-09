@@ -92,8 +92,15 @@ def validate_cronograma_df(df: pd.DataFrame):
         for failure in e.failure_cases.itertuples(index=False):
             errors.append(f"Fila {failure.index}: {failure.column} -> {failure.failure_case}")
 
-    # Clean up any remaining NaN values after validation
+    # Clean up all NaN values after validation
     # Replace NaN with None in all columns to avoid conversion issues later
     df = df.where(pd.notna(df), None)
+
+    # Additional pass: explicitly convert object columns that might still have NaN
+    # This handles edge cases where numpy.nan persists as object type
+    for col in df.columns:
+        if df[col].dtype == object:
+            # For object columns, explicitly replace any NaN-like values
+            df[col] = df[col].apply(lambda x: None if (pd.isna(x) or x is pd.NA) else x)
 
     return df, errors
