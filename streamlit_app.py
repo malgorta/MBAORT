@@ -29,8 +29,8 @@ def discover_pages(package):
         module_name = f"{package.__name__}.{name}"
         try:
             module = importlib.import_module(module_name)
-        except Exception:
-            # Skip modules that fail to import
+        except Exception as e:
+            st.sidebar.error(f"Import fail {module_name}: {e}")
             continue
 
         if not hasattr(module, "run"):
