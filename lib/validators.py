@@ -99,7 +99,7 @@ def validate_cronograma_df(df: pd.DataFrame):
     schema = DataFrameSchema(
         {
             "Programa": Column(pa.String, nullable=False),
-            "Año": Column(pa.Int, nullable=False),
+            "Año": Column(pa.Int, nullable=True),
             "Módulo": Column(pa.String, nullable=False),
             "Materia": Column(pa.String, nullable=False),
             "Horas": Column(pa.Float, nullable=True),
