@@ -19,6 +19,10 @@ if _db_data_path.is_absolute():
 else:
     DATA_DIR = _REPO_ROOT / _db_data_path
 
+# Ensure data directory exists before creating engine
+# This prevents "unable to open database file" errors
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
 DB_PATH = DATA_DIR / "app.db"
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
