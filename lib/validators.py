@@ -49,11 +49,26 @@ def validate_cronograma_df(df: pd.DataFrame):
     # Work on a copy
     df = df.copy()
 
-    # Coerce numeric
+    # AGGRESSIVE NaN CLEANING - Convert all NaN to None first
+    # This prevents pandera validation errors and SQLAlchemy conversion errors
+    df = df.where(pd.notna(df), None)
+
+    # Coerce numeric - but handle None values properly
     try:
-        df["Horas"] = pd.to_numeric(df["Horas"], errors="coerce")
+        # For Horas: convert to float, keeping None as is
+        df["Horas"] = df["Horas"].apply(
+            lambda x: None if x is None or pd.isna(x) else float(x)
+        )
     except Exception as e:
         errors.append(f"Error en conversión de 'Horas': {e}")
+
+    # For Año: convert to int, keeping None as is
+    try:
+        df["Año"] = df["Año"].apply(
+            lambda x: None if x is None or pd.isna(x) else int(float(x))
+        )
+    except Exception as e:
+        errors.append(f"Error en conversión de 'Año': {e}")
 
     # Coerce dates
     _coerce_dates(df, "Inicio", errors)
@@ -92,15 +107,7 @@ def validate_cronograma_df(df: pd.DataFrame):
         for failure in e.failure_cases.itertuples(index=False):
             errors.append(f"Fila {failure.index}: {failure.column} -> {failure.failure_case}")
 
-    # Clean up all NaN values after validation
-    # Replace NaN with None in all columns to avoid conversion issues later
+    # Final cleanup: replace any remaining NaN with None
     df = df.where(pd.notna(df), None)
-
-    # Additional pass: explicitly convert object columns that might still have NaN
-    # This handles edge cases where numpy.nan persists as object type
-    for col in df.columns:
-        if df[col].dtype == object:
-            # For object columns, explicitly replace any NaN-like values
-            df[col] = df[col].apply(lambda x: None if (pd.isna(x) or x is pd.NA) else x)
 
     return df, errors
