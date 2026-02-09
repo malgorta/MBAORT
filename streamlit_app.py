@@ -43,23 +43,21 @@ def discover_pages(package):
 
 
 def load_and_run(module_name: str):
-    st.write(f"✅ Cargando: {module_name}")
+    st.write(f"✅ Router: cargando {module_name}")
     try:
         module = importlib.import_module(module_name)
-        st.write("✅ Import OK")
+        st.write("✅ Router: import OK")
 
         if not hasattr(module, "run"):
-            st.error("❌ Esta página no tiene run()")
+            st.error("❌ Router: la página no tiene run()")
             return
 
         module.run()
-        st.write("✅ run() terminó")
+        st.write("✅ Router: run() finalizó")
 
     except Exception as e:
-        st.error(f"❌ Error ejecutando {module_name}")
+        st.error(f"❌ Router: error ejecutando {module_name}")
         st.exception(e)
-
-
 
 
 def render_sidebar():
