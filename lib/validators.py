@@ -33,6 +33,27 @@ def _coerce_dates(df: pd.DataFrame, col: str, errors: list):
         errors.append(f"Error convirtiendo columna {col} a datetime: {e}")
 
 
+def _safe_float(value):
+    """Safely convert value to float, returning None if conversion fails."""
+    if value is None or pd.isna(value):
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        # If conversion fails, return None (for values like "16+4", "N/A", etc.)
+        return None
+
+
+def _safe_int(value):
+    """Safely convert value to int, returning None if conversion fails."""
+    if value is None or pd.isna(value):
+        return None
+    try:
+        return int(float(value))  # Convert to float first to handle "2.0"
+    except (ValueError, TypeError):
+        return None
+
+
 def validate_cronograma_df(df: pd.DataFrame):
     """Validate and coerce the cronograma DataFrame.
 
@@ -53,20 +74,16 @@ def validate_cronograma_df(df: pd.DataFrame):
     # This prevents pandera validation errors and SQLAlchemy conversion errors
     df = df.where(pd.notna(df), None)
 
-    # Coerce numeric - but handle None values properly
+    # Coerce numeric - but handle None and unparseable values properly
     try:
-        # For Horas: convert to float, keeping None as is
-        df["Horas"] = df["Horas"].apply(
-            lambda x: None if x is None or pd.isna(x) else float(x)
-        )
+        # For Horas: safely convert to float, keeping None and unparseable values as None
+        df["Horas"] = df["Horas"].apply(_safe_float)
     except Exception as e:
         errors.append(f"Error en conversión de 'Horas': {e}")
 
-    # For Año: convert to int, keeping None as is
+    # For Año: safely convert to int, keeping None and unparseable values as None
     try:
-        df["Año"] = df["Año"].apply(
-            lambda x: None if x is None or pd.isna(x) else int(float(x))
-        )
+        df["Año"] = df["Año"].apply(_safe_int)
     except Exception as e:
         errors.append(f"Error en conversión de 'Año': {e}")
 
