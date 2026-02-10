@@ -45,7 +45,7 @@ def count_electives_completed(student_id: int, elective_type: str = "electiva") 
     with get_session() as session:
         count = (
             session.query(func.count(Enrollment.id))
-            .join(Course, Enrollment.course_id == Course.course_id)
+            .join(Course, Enrollment.course_id_ref == Course.id)
             .filter(and_(
                 Enrollment.student_id == student_id,
                 Enrollment.status == "completed",
@@ -64,7 +64,7 @@ def elective_counts_by_orientation(student_id: int, elective_type: str = "electi
     with get_session() as session:
         rows = (
             session.query(Course.orientacion, func.count(Enrollment.id))
-            .join(Enrollment, Enrollment.course_id == Course.course_id)
+            .join(Enrollment, Enrollment.course_id_ref == Course.id)
             .filter(and_(
                 Enrollment.student_id == student_id,
                 Enrollment.status == "completed",

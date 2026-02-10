@@ -241,7 +241,7 @@ def run():
             fecha_estado = st.date_input("Fecha de finalización", value=datetime.now(), key="enroll_fecha")
 
         # Check if enrollment exists
-        existing_enroll = next((e for e in enrollments if e.course_id == selected_course.course_id), None)
+        existing_enroll = next((e for e in enrollments if e.course_id_ref == selected_course.id), None)
 
         if existing_enroll:
             st.info(f"Este estudiante ya está inscrito en {selected_course.materia} (estado: {existing_enroll.status})")
@@ -283,7 +283,8 @@ def run():
                 with get_session() as session:
                     enroll = Enrollment(
                         student_id=selected_student.student_id,
-                        course_id=selected_course.course_id,
+                        course_id_ref=selected_course.id,
+                        course_id=selected_course.course_id,  # Store for reference
                         status=status,
                         nota=nota_text if nota_text else None,
                         nota_numerica=nota_numerica if nota_numerica else None,

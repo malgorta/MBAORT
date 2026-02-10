@@ -71,7 +71,7 @@ def run():
                 if items:
                     with get_session() as session:
                         planned_items = session.query(StudentPlanItem, Course).join(
-                            Course, StudentPlanItem.course_id == Course.course_id
+                            Course, StudentPlanItem.course_id_ref == Course.id
                         ).filter(
                             StudentPlanItem.plan_version_id == current_plan.id,
                             StudentPlanItem.estado_plan == "planned",
@@ -259,7 +259,8 @@ def run():
                             with get_session() as session:
                                 item = StudentPlanItem(
                                     plan_version_id=current_plan.id,
-                                    course_id=selected_course.course_id,
+                                    course_id_ref=selected_course.id,
+                                    course_id=selected_course.course_id,  # Store for reference
                                     prioridad=prioridad,
                                     estado_plan=estado,
                                     nota=nota if nota else None,

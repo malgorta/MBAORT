@@ -39,7 +39,7 @@ def run():
         # Calculate demand
         with get_session() as session:
             planned_items = session.query(StudentPlanItem, Course, PlanVersion).join(
-                Course, StudentPlanItem.course_id == Course.course_id
+                Course, StudentPlanItem.course_id_ref == Course.id
             ).join(
                 PlanVersion, StudentPlanItem.plan_version_id == PlanVersion.id
             ).filter(
@@ -112,7 +112,7 @@ def run():
         with get_session() as session:
             # Get course sources with module info
             sources = session.query(CourseSource, Course).join(
-                Course, CourseSource.course_id == Course.course_id
+                Course, CourseSource.course_id_ref == Course.id
             ).all()
 
             # Count demand by source
@@ -120,7 +120,7 @@ def run():
             for source, course in sources:
                 # Check if any planned student has this course
                 planned_count = session.query(StudentPlanItem).filter(
-                    StudentPlanItem.course_id == course.course_id,
+                    StudentPlanItem.course_id_ref == course.id,
                     StudentPlanItem.estado_plan == "planned",
                 ).count()
 

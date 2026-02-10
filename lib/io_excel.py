@@ -199,9 +199,13 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                 comentarios = _sanitize_for_db(comentarios)
 
                 # Upsert Course
-                # Use merge() instead of add() for safe upsert behavior
-                # This handles the case where course_id appears multiple times with different orientations
-                existing = session.get(Course, course_id)
+                # Look up by (course_id, orientacion) combination since that's the unique constraint
+                existing = (
+                    session.query(Course)
+                    .filter_by(course_id=course_id, orientacion=orientacion)
+                    .one_or_none()
+                )
+                
                 if existing:
                     # Update existing course with new values
                     existing.programa = programa
@@ -214,10 +218,10 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                     existing.formato = formato
                     existing.horas = horas
                     existing.tipo_materia = tipo_materia
-                    existing.orientacion = orientacion
                     existing.comentarios = comentarios
                     session.merge(existing)
                     summary["updated_courses"] += 1
+                    course_db = existing
                 else:
                     new_course = Course(
                         course_id=course_id,
@@ -235,16 +239,18 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                         comentarios=comentarios,
                     )
                     session.merge(new_course)
+                    session.flush()  # Flush to get the generated ID
                     summary["created_courses"] += 1
+                    course_db = new_course
 
-                # CourseSource upsert by (course_id, solapa_fuente, modulo, row_fuente)
+                # CourseSource upsert by (course_id_ref, solapa_fuente, modulo, row_fuente)
                 solapa = _norm_str(row.get("SolapaFuente"))
                 modulo_src = modulo
                 row_fuente = int(idx + 2)  # approximate original Excel row (header row assumed 1)
 
                 src = (
                     session.query(CourseSource)
-                    .filter_by(course_id=course_id, solapa_fuente=solapa, modulo=modulo_src, row_fuente=row_fuente)
+                    .filter_by(course_id_ref=course_db.id, solapa_fuente=solapa, modulo=modulo_src, row_fuente=row_fuente)
                     .one_or_none()
                 )
 
@@ -259,7 +265,8 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                 else:
                     # Create new source
                     src = CourseSource(
-                        course_id=course_id,
+                        course_id_ref=course_db.id,
+                        course_id=course_id,  # Store course_id for reference
                         solapa_fuente=solapa,
                         orientacion_fuente=orientacion_fuente,
                         modulo=modulo_src,
