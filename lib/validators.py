@@ -38,9 +38,12 @@ def _safe_float(value):
     if value is None or pd.isna(value):
         return None
     try:
-        return float(value)
+        result = float(value)
+        # Ensure it's not NaN
+        if pd.isna(result):
+            return None
+        return result
     except (ValueError, TypeError):
-        # If conversion fails, return None (for values like "16+4", "N/A", etc.)
         return None
 
 
@@ -49,7 +52,11 @@ def _safe_int(value):
     if value is None or pd.isna(value):
         return None
     try:
-        return int(float(value))  # Convert to float first to handle "2.0"
+        float_val = float(value)
+        # Ensure float is not NaN
+        if pd.isna(float_val):
+            return None
+        return int(float_val)
     except (ValueError, TypeError):
         return None
 

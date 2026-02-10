@@ -13,7 +13,90 @@ def _norm_str(value):
     s = str(value).strip()
     # collapse whitespace
     s = " ".join(s.split())
-    return s
+    return s if s else None
+
+
+def _norm_int(value):
+    """Convert value to int, handling NaN and invalid values."""
+    if value is None:
+        return None
+    
+    # Handle pandas/numpy NaN types
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    
+    # Handle numpy integer types
+    try:
+        import numpy as np
+        if isinstance(value, (np.floating, np.integer)):
+            if pd.isna(value):
+                return None
+            return int(value)
+    except ImportError:
+        pass
+    
+    try:
+        # Handle float values
+        if isinstance(value, float):
+            if pd.isna(value):
+                return None
+            return int(value)
+        return int(float(value))
+    except (ValueError, TypeError):
+        return None
+
+
+def _norm_float(value):
+    """Convert value to float, handling NaN and invalid values."""
+    if value is None:
+        return None
+    
+    # Handle pandas/numpy NaN types
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    
+    # Handle numpy types
+    try:
+        import numpy as np
+        if isinstance(value, (np.floating, np.integer)):
+            if pd.isna(value):
+                return None
+            result = float(value)
+            if pd.isna(result):
+                return None
+            return result
+    except ImportError:
+        pass
+    
+    try:
+        result = float(value)
+        if pd.isna(result):
+            return None
+        return result
+    except (ValueError, TypeError):
+        return None
+
+
+def _sanitize_for_db(value):
+    """Final sanitization: ensure value is either None or a valid Python type (not NaN)."""
+    if value is None:
+        return None
+    # Check for float NaN specifically
+    if isinstance(value, float) and pd.isna(value):
+        return None
+    # Check for NaN in any form
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    return value
 
 
 def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, object]):
@@ -60,27 +143,13 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                 programa = _norm_str(row.get("Programa"))
 
                 # Convert anio (Integer) - handle NaN safely
-                try:
-                    anio_val = row.get("Año")
-                    if pd.isna(anio_val) or anio_val == '':
-                        anio = None
-                    else:
-                        anio = int(float(anio_val))
-                except (ValueError, TypeError):
-                    anio = None
+                anio = _norm_int(row.get("Año"))
 
                 modulo = _norm_str(row.get("Módulo"))
                 materia = _norm_str(row.get("Materia"))
 
                 # Convert horas (Float) - handle NaN safely
-                try:
-                    horas_val = row.get("Horas")
-                    if pd.isna(horas_val) or horas_val == '':
-                        horas = None
-                    else:
-                        horas = float(horas_val)
-                except (ValueError, TypeError):
-                    horas = None
+                horas = _norm_float(row.get("Horas"))
 
                 inicio = row.get("Inicio")
                 final = row.get("Final")
@@ -97,12 +166,37 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                         inicio = pd.to_datetime(inicio).date()
                     except Exception:
                         inicio = None
+                else:
+                    inicio = None
 
                 if pd.notna(final):
                     try:
                         final = pd.to_datetime(final).date()
                     except Exception:
                         final = None
+                else:
+                    final = None
+
+                # DEFENSIVE: Ensure no NaN values in numeric fields
+                # This prevents "cannot convert float NaN to integer" errors
+                if pd.isna(anio) or (isinstance(anio, float) and pd.isna(anio)):
+                    anio = None
+                if pd.isna(horas) or (isinstance(horas, float) and pd.isna(horas)):
+                    horas = None
+
+                # Sanitize all values before database operations
+                programa = _sanitize_for_db(programa)
+                anio = _sanitize_for_db(anio)
+                materia = _sanitize_for_db(materia)
+                inicio = _sanitize_for_db(inicio)
+                final = _sanitize_for_db(final)
+                dia = _sanitize_for_db(dia)
+                horario = _sanitize_for_db(horario)
+                formato = _sanitize_for_db(formato)
+                horas = _sanitize_for_db(horas)
+                tipo_materia = _sanitize_for_db(tipo_materia)
+                orientacion = _sanitize_for_db(orientacion)
+                comentarios = _sanitize_for_db(comentarios)
 
                 # Upsert Course
                 existing = session.get(Course, course_id)
@@ -123,6 +217,8 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                         ("orientacion", orientacion),
                         ("comentarios", comentarios),
                     ):
+                        # Sanitize value one more time before setting
+                        val = _sanitize_for_db(val)
                         if val is not None and getattr(existing, attr) != val:
                             setattr(existing, attr, val)
                             changed = True

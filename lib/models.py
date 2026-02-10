@@ -19,7 +19,7 @@ class Course(Base):
     __tablename__ = "courses"
     course_id = Column(String, primary_key=True, index=True)
     programa = Column(String, index=True)
-    anio = Column(Integer, index=True)
+    anio = Column(Integer, index=True, nullable=True)
     materia = Column(String, index=True)
     inicio = Column(Date, nullable=True)
     final = Column(Date, nullable=True)
