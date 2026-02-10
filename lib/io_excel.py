@@ -131,43 +131,52 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
     # Ensure DB and tables exist
     init_db()
 
-    with get_session() as session:
-        for idx, row in df.reset_index(drop=True).iterrows():
-            try:
-                course_id = _norm_str(row.get("MateriaID"))
-                if not course_id:
-                    summary["errors"].append(f"Fila {idx}: MateriaID vacío")
-                    continue
-
-                # Normalize fields
-                programa = _norm_str(row.get("Programa"))
-
-                # Convert anio (Integer) - handle NaN safely
-                anio = _norm_int(row.get("Año"))
-
-                modulo = _norm_str(row.get("Módulo"))
-                materia = _norm_str(row.get("Materia"))
-
-                # Convert horas (Float) - handle NaN safely
-                horas = _norm_float(row.get("Horas"))
-
-                inicio = row.get("Inicio")
-                final = row.get("Final")
-                dia = _norm_str(row.get("Día"))
-                horario = _norm_str(row.get("Horario"))
-                formato = _norm_str(row.get("Formato"))
-                tipo_materia = _norm_str(row.get("TipoMateria"))
-                orientacion = _norm_str(row.get("Orientación"))
-                comentarios = _norm_str(row.get("Comentarios"))
-
-                # Convert dates to date only (if Timestamp)
-                if pd.notna(inicio):
-                    try:
-                        inicio = pd.to_datetime(inicio).date()
-                    except Exception:
-                        inicio = None
-                else:
                     inicio = None
+                if existing:
+                    # Update existing course with new values
+                    existing.programa = programa
+                    existing.anio = anio
+                    existing.materia = materia
+                    existing.inicio = inicio
+                    existing.final = final
+                    existing.dia = dia
+                    existing.horario = horario
+                    existing.formato = formato
+                    existing.horas = horas
+                    existing.tipo_materia = tipo_materia
+                    existing.comentarios = comentarios
+                    session.merge(existing)
+                    summary["updated_courses"] += 1
+                    course_db = existing
+                else:
+                    try:
+                        new_course = Course(
+                            course_id=course_id,
+                            programa=programa,
+                            anio=anio,
+                            materia=materia,
+                            inicio=inicio,
+                            final=final,
+                            dia=dia,
+                            horario=horario,
+                            formato=formato,
+                            horas=horas,
+                            tipo_materia=tipo_materia,
+                            orientacion=orientacion,
+                            comentarios=comentarios,
+                        )
+                        session.add(new_course)
+                        session.flush()  # Flush to get the generated ID
+                        summary["created_courses"] += 1
+                        course_db = new_course
+                    except Exception as e:
+                        summary["errors"].append(f"Fila {idx}: error al crear curso: {e}")
+                        course_db = None
+
+                # Solo crear CourseSource si el curso existe y tiene id
+                if not course_db or not getattr(course_db, "id", None):
+                    summary["errors"].append(f"Fila {idx}: no se pudo crear CourseSource porque el curso no se creó correctamente (course_id={course_id}, orientacion={orientacion})")
+                    continue
 
                 if pd.notna(final):
                     try:
