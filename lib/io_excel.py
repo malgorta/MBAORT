@@ -248,23 +248,24 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                     .one_or_none()
                 )
 
+                orientacion_fuente = _norm_str(row.get("Orientación"))
+
                 if src:
-                    changed = False
-                    for attr, val in (("orientacion_fuente", _norm_str(row.get("Orientación"))),):
-                        if val is not None and getattr(src, attr) != val:
-                            setattr(src, attr, val)
-                            changed = True
-                    if changed:
+                    # Update existing source
+                    if orientacion_fuente and src.orientacion_fuente != orientacion_fuente:
+                        src.orientacion_fuente = orientacion_fuente
+                        session.merge(src)
                         summary["updated_sources"] += 1
                 else:
+                    # Create new source
                     src = CourseSource(
                         course_id=course_id,
                         solapa_fuente=solapa,
-                        orientacion_fuente=_norm_str(row.get("Orientación")),
+                        orientacion_fuente=orientacion_fuente,
                         modulo=modulo_src,
                         row_fuente=row_fuente,
                     )
-                    session.add(src)
+                    session.merge(src)
                     summary["created_sources"] += 1
 
             except Exception as e:
