@@ -199,31 +199,25 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                 comentarios = _sanitize_for_db(comentarios)
 
                 # Upsert Course
+                # Use merge() instead of add() for safe upsert behavior
+                # This handles the case where course_id appears multiple times with different orientations
                 existing = session.get(Course, course_id)
                 if existing:
-                    # Update fields
-                    changed = False
-                    for attr, val in (
-                        ("programa", programa),
-                        ("anio", anio),
-                        ("materia", materia),
-                        ("inicio", inicio),
-                        ("final", final),
-                        ("dia", dia),
-                        ("horario", horario),
-                        ("formato", formato),
-                        ("horas", horas),
-                        ("tipo_materia", tipo_materia),
-                        ("orientacion", orientacion),
-                        ("comentarios", comentarios),
-                    ):
-                        # Sanitize value one more time before setting
-                        val = _sanitize_for_db(val)
-                        if val is not None and getattr(existing, attr) != val:
-                            setattr(existing, attr, val)
-                            changed = True
-                    if changed:
-                        summary["updated_courses"] += 1
+                    # Update existing course with new values
+                    existing.programa = programa
+                    existing.anio = anio
+                    existing.materia = materia
+                    existing.inicio = inicio
+                    existing.final = final
+                    existing.dia = dia
+                    existing.horario = horario
+                    existing.formato = formato
+                    existing.horas = horas
+                    existing.tipo_materia = tipo_materia
+                    existing.orientacion = orientacion
+                    existing.comentarios = comentarios
+                    session.merge(existing)
+                    summary["updated_courses"] += 1
                 else:
                     new_course = Course(
                         course_id=course_id,
@@ -240,7 +234,7 @@ def import_schedule_excel(uploaded_file_or_path: Union[str, bytes, os.PathLike, 
                         orientacion=orientacion,
                         comentarios=comentarios,
                     )
-                    session.add(new_course)
+                    session.merge(new_course)
                     summary["created_courses"] += 1
 
                 # CourseSource upsert by (course_id, solapa_fuente, modulo, row_fuente)
