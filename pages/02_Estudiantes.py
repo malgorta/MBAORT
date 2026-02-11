@@ -27,12 +27,14 @@ def run():
 
         if all_students:
             # Selection
-            student_names = {f"{s.nombre} {s.apellido} ({s.email})": s for s in all_students}
+
+            student_names = {f"{s.numero_estudiante} - {s.nombre} {s.apellido} ({s.email})": s for s in all_students}
             selected_label = st.selectbox("Seleccionar estudiante para editar", options=list(student_names.keys()))
             selected_student = student_names[selected_label]
 
-            col1, col2, col3 = st.columns(3)
-
+            col0, col1, col2, col3 = st.columns(4)
+            with col0:
+                nuevo_numero_estudiante = st.text_input("Número de estudiante", value=selected_student.numero_estudiante)
             with col1:
                 nuevo_nombre = st.text_input("Nombre", value=selected_student.nombre)
             with col2:
@@ -51,6 +53,9 @@ def run():
                 with get_session() as session:
                     s = session.get(Student, selected_student.student_id)
                     if s:
+                        if s.numero_estudiante != nuevo_numero_estudiante:
+                            log_change("Student", str(s.student_id), "numero_estudiante", s.numero_estudiante, nuevo_numero_estudiante, user=user_name)
+                            s.numero_estudiante = nuevo_numero_estudiante
                         if s.nombre != nuevo_nombre:
                             log_change("Student", str(s.student_id), "nombre", s.nombre, nuevo_nombre, user=user_name)
                             s.nombre = nuevo_nombre
@@ -84,7 +89,10 @@ def run():
         # Create new student
         st.markdown("---")
         st.subheader("Crear Nuevo Estudiante")
-        col_n, col_a, col_e = st.columns(3)
+
+        col_num, col_n, col_a, col_e = st.columns(4)
+        with col_num:
+            new_numero_estudiante = st.text_input("Número de estudiante (nuevo)", key="new_numero_estudiante")
         with col_n:
             new_nombre = st.text_input("Nombre (nuevo)", key="new_nombre")
         with col_a:
@@ -99,12 +107,13 @@ def run():
             new_cohorte = st.text_input("Cohorte (nuevo)", key="new_cohorte")
 
         if st.button("Crear Estudiante"):
-            if not new_nombre or not new_email:
-                st.error("Nombre y email son requeridos.")
+            if not new_numero_estudiante or not new_nombre or not new_email:
+                st.error("Número de estudiante, nombre y email son requeridos.")
             else:
                 with get_session() as session:
                     try:
                         new_student = Student(
+                            numero_estudiante=new_numero_estudiante,
                             nombre=new_nombre,
                             apellido=new_apellido,
                             email=new_email,

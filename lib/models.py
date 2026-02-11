@@ -56,6 +56,7 @@ class CourseSource(Base):
 class Student(Base):
     __tablename__ = "students"
     student_id = Column(Integer, primary_key=True, autoincrement=True)
+    numero_estudiante = Column(String, unique=True, index=True, nullable=False, doc="Número de estudiante (identificador)")
     nombre = Column(String, nullable=False)
     apellido = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
